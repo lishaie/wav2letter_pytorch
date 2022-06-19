@@ -4,6 +4,7 @@ from __future__ import division
 
 import json
 import math
+from typing import Tuple, List
 
 import librosa
 import numpy as np
@@ -12,6 +13,7 @@ import scipy.signal
 import soundfile as sf
 import torch
 import torch.nn
+from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 
@@ -41,7 +43,7 @@ class SpectrogramExtractor(torch.nn.Module):
         window_stride_samples = int(audio_conf.sample_rate * audio_conf.window_stride)
         self.n_fft = 2 ** math.ceil(math.log2(window_size_samples))
         filterbanks = torch.tensor(
-            librosa.filters.mel(audio_conf.sample_rate,
+            librosa.filters.mel(sr=audio_conf.sample_rate,
                                 n_fft=self.n_fft,
                                 n_mels=mel_spec, fmin=0, fmax=audio_conf.sample_rate / 2),
             dtype=torch.float
@@ -153,18 +155,21 @@ class SpectrogramDataset(Dataset):
         return self.mel_spec or int(1 + (int(self.sample_rate * self.window_size) / 2))
 
 
-def _collator(batch):
+def _collator(batch: Tuple[Tuple[torch.Tensor], Tuple[List[int]], List[str], List[str]]):
     inputs, targets, file_paths, texts = zip(*batch)
-    input_lengths = torch.IntTensor(list(map(lambda input: input.shape[1], inputs)))
+    input_lengths = torch.IntTensor(list(map(lambda x: x.shape[1], inputs)))
     target_lengths = torch.IntTensor(list(map(len, targets)))
-    longest_input = max(input_lengths).item()
-    longest_target = max(target_lengths).item()
+    inputs = pad_sequence([x.swapdims(-1, -2) for x in inputs], batch_first=True).swapdims(-1, -2)
+    targets = pad_sequence([torch.IntTensor(x) for x in targets], batch_first=True)
 
-    def pad_function(x):
-        return np.pad(x, ((0, 0), (0, longest_input - x.shape[1])), mode='constant')
-
-    inputs = torch.FloatTensor(list(map(pad_function, inputs)))
-    targets = torch.IntTensor([np.pad(np.array(t), (0, longest_target - len(t)), mode='constant') for t in targets])
+    # longest_input = max(input_lengths).item()
+    # longest_target = max(target_lengths).item()
+    #
+    # def pad_function(x):
+    #     return np.pad(x, ((0, 0), (0, longest_input - x.shape[1])), mode='constant')
+    #
+    # inputs = torch.FloatTensor(list(map(pad_function, inputs)))
+    # targets = torch.IntTensor([np.pad(np.array(t), (0, longest_target - len(t)), mode='constant') for t in targets])
     return inputs, input_lengths, targets, target_lengths, file_paths, texts
 
 

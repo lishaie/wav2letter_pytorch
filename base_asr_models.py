@@ -31,12 +31,12 @@ class ConvCTCASR(ptl.LightningModule):
         lengths = torch.randint(min_length, max_length, (4,))
         return torch.rand(batch_size, self._cfg.input_size, max_length), lengths
         
-    def compute_output_lengths(self, input_lengths):
+    def compute_output_lengths(self, input_lengths: torch.IntTensor):
         """
         Compute the output lengths given the input lengths.
         Override if ratio is not strictly proportional (can happen with unpadded convolutions)
         """
-        output_lengths = input_lengths // self.scaling_factor
+        output_lengths = input_lengths.div(self.scaling_factor, rounding_mode='trunc')
         return output_lengths
     
     @property 

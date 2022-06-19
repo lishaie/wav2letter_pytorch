@@ -7,6 +7,7 @@ data:
     train_manifest: datasets/dev-clean.csv
     val_manifest: datasets/test-clean.csv
     batch_size: 4
+    num_workers: 8
     mel_spec: ${model.input_size}
     audio_conf: ${model.audio_conf}
 model:
@@ -23,6 +24,8 @@ trainer:
     gpus: 1
     
 hydra:
+    job:
+        chdir: True
     run:
         dir: ${trainer.default_root_dir}
     job_logging:
