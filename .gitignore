@@ -145,3 +145,9 @@ models/
 datasets/*.csv
 datasets/*.tar.gz
 datasets/extracted
+
+# Hydra
+.hydra/
+
+# Logs
+lightning_logs/
