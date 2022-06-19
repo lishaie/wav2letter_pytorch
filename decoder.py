@@ -8,6 +8,7 @@ import numpy as np
 
 import data.label_sets
 
+
 class Decoder(object):
     """
     Basic decoder class from which all other decoders inherit. Implements several
@@ -58,15 +59,13 @@ class Decoder(object):
         """
         s1, s2, = s1.replace(' ', ''), s2.replace(' ', '')
         return Lev.distance(s1, s2)
-    
+
     def cer_ratio(self, expected, predicted):
-        return self.cer(expected,predicted) , len(expected.replace(' ',''))
-    
+        return self.cer(expected, predicted), len(expected.replace(' ', ''))
+
     def wer_ratio(self, expected, predicted):
-        return self.wer(expected,predicted) , len(expected.split())
-    
-    
-    
+        return self.wer(expected, predicted), len(expected.split())
+
     def decode(self, probs, sizes=None):
         """
         Given a matrix of character probabilities, returns the decoder's
@@ -136,15 +135,17 @@ class GreedyDecoder(Decoder):
         _, max_probs = torch.max(probs, 2)
         strings, offsets = self.convert_to_strings(max_probs.view(max_probs.size(0), max_probs.size(1)), sizes,
                                                    remove_repetitions=True, return_offsets=True)
-        strings = [s[0] for s in strings] #This feels a bit hacky.
-        #if probs.shape[0] == 1:
+        strings = [s[0] for s in strings]  # This feels a bit hacky.
+        # if probs.shape[0] == 1:
         #    strings = strings[0]
         #    offsets = offsets[0]
         if return_offsets:
             return strings, offsets
         return strings
-    
-def prefix_beam_search(ctc, labels, blank_index=0, lm=None,k=5,alpha=0.3,beta=5,prune=0.001,end_char='>',return_weights=False):
+
+
+def prefix_beam_search(ctc, labels, blank_index=0, lm=None, k=5, alpha=0.3, beta=5, prune=0.001, end_char='>',
+                       return_weights=False):
     """
     Performs prefix beam search on the output of a CTC network.
     Originally from https://github.com/corticph/prefix-beam-search, with minor edits.
@@ -162,12 +163,15 @@ def prefix_beam_search(ctc, labels, blank_index=0, lm=None,k=5,alpha=0.3,beta=5,
     assert (ctc.shape[1] == len(labels)), "ctc size:%d, labels: %d" % (ctc.shape[1], len(labels))
     assert ctc.shape[0] > 1, "ctc length: %d was too short" % ctc.shape[0]
     assert (ctc >= 0).all(), 'ctc output contains negative numbers'
-    lm = (lambda l: 1) if lm is None else lm # if no LM is provided, just set to function returning 1
+    lm = (lambda l: 1) if lm is None else lm  # if no LM is provided, just set to function returning 1
     word_count_re = re.compile(r'\w+[\s|>]')
-    W = lambda l: word_count_re.findall(l)
+
+    def W(l):
+        return word_count_re.findall(l)
+    # W = lambda l: word_count_re.findall(l)
     F = ctc.shape[1]
-    
-    ctc = np.vstack((np.zeros(F), ctc)) # just add an imaginative zero'th step (will make indexing more intuitive)
+
+    ctc = np.vstack((np.zeros(F), ctc))  # just add an imaginative zero'th step (will make indexing more intuitive)
     T = ctc.shape[0]
     blank_char = labels[blank_index]
 
@@ -183,32 +187,32 @@ def prefix_beam_search(ctc, labels, blank_index=0, lm=None,k=5,alpha=0.3,beta=5,
     for t in range(1, T):
         pruned_alphabet = [labels[i] for i in np.where(ctc[t] > prune)[0]]
         for l in A_prev:
-            
+
             if len(l) > 0 and l[-1] == end_char:
                 Pb[t][l] = Pb[t - 1][l]
                 Pnb[t][l] = Pnb[t - 1][l]
-                continue  
+                continue
 
             for c in pruned_alphabet:
                 c_ix = labels.index(c)
                 # END: STEP 2
-                
+
                 # STEP 3: “Extending” with a blank
                 if c == blank_char:
                     Pb[t][l] += ctc[t][blank_index] * (Pb[t - 1][l] + Pnb[t - 1][l])
                 # END: STEP 3
-                
+
                 # STEP 4: Extending with the end character
                 else:
                     l_plus = l + c
                     if len(l) > 0 and c == l[-1]:
                         Pnb[t][l_plus] += ctc[t][c_ix] * Pb[t - 1][l]
                         Pnb[t][l] += ctc[t][c_ix] * Pnb[t - 1][l]
-                # END: STEP 4
+                    # END: STEP 4
 
                     # STEP 5: Extending with any other non-blank character and LM constraints
                     elif len(l.replace(' ', '')) > 0 and c in (' ', end_char):
-                        lm_prob = lm(l_plus.strip(' '+end_char)) ** alpha
+                        lm_prob = lm(l_plus.strip(' ' + end_char)) ** alpha
                         Pnb[t][l_plus] += lm_prob * ctc[t][c_ix] * (Pb[t - 1][l] + Pnb[t - 1][l])
                     else:
                         Pnb[t][l_plus] += ctc[t][c_ix] * (Pb[t - 1][l] + Pnb[t - 1][l])
@@ -225,15 +229,16 @@ def prefix_beam_search(ctc, labels, blank_index=0, lm=None,k=5,alpha=0.3,beta=5,
         sorter = lambda l: A_next[l] * (len(W(l)) + 1) ** beta
         A_prev = sorted(A_next, key=sorter, reverse=True)[:k]
         # END: STEP 7
-    if len(A_prev) ==0:
-        A_prev=['']
+    if len(A_prev) == 0:
+        A_prev = ['']
     if return_weights:
-        return A_prev[0],A_next[A_prev[0]] * (len(W(A_prev[0])) + 1) ** beta
+        return A_prev[0], A_next[A_prev[0]] * (len(W(A_prev[0])) + 1) ** beta
     return A_prev[0]
-    #For N-best decode, return A_prev[0:N] - not tested yet.
+    # For N-best decode, return A_prev[0:N] - not tested yet.
+
 
 class PrefixBeamSearchLMDecoder(Decoder):
-    def __init__(self,lm_path,labels,blank_index=0,k=5,alpha=0.3,beta=5,prune=1e-3):
+    def __init__(self, lm_path, labels, blank_index=0, k=5, alpha=0.3, beta=5, prune=1e-3):
         """
         Args:
             lm_path (str): The path to the kenlm language model.
@@ -244,52 +249,57 @@ class PrefixBeamSearchLMDecoder(Decoder):
             beta (float): The language model compensation term. The higher the 'alpha', the higher the 'beta'.
             prune (float): Only extend prefixes with chars with an emission probability higher than 'prune'.
         """
-        super(PrefixBeamSearchLMDecoder, self).__init__(labels,blank_index)
+        super(PrefixBeamSearchLMDecoder, self).__init__(labels, blank_index)
         if lm_path:
             import kenlm
             self.lm = kenlm.Model(lm_path)
-            self.lm_weigh = lambda f: 10**(self.lm.score(f))
+            self.lm_weigh = lambda f: 10 ** (self.lm.score(f))
         else:
             self.lm_weigh = lambda s: 1
-        self.k =k
-        self.alpha=alpha
-        self.beta=beta
-        self.prune=prune
-        
+        self.k = k
+        self.alpha = alpha
+        self.beta = beta
+        self.prune = prune
+
     def decode(self, probs, sizes=None, return_offsets=False):
         if return_offsets:
             raise NotImplementedError("Prefix beam search does not support offsets (yet).")
-        if len(probs.shape) == 2: # Single    
-            return prefix_beam_search(probs,self.labels,self.blank_index,self.lm_weigh,self.k,self.alpha,self.beta,self.prune)
-        elif len(probs.shape) == 3: # Batch
+        if len(probs.shape) == 2:  # Single
+            return prefix_beam_search(probs, self.labels, self.blank_index, self.lm_weigh, self.k, self.alpha,
+                                      self.beta, self.prune)
+        elif len(probs.shape) == 3:  # Batch
             return [self.decode(prob) for prob in probs]
         else:
-            raise RuntimeError('Decoding with wrong shape: %s, expected either [Batch X Frames X Labels] or [Frames X Labels]' % str(probs.shape))
+            raise RuntimeError(
+                'Decoding with wrong shape: %s, expected either [Batch X Frames X Labels] or [Frames X Labels]' % str(
+                    probs.shape))
 
 
 def get_time_per_word(predictions, offsets, ratio=1.0):
     """
     Compute the start and end time for each word outputed by the model (and decoder), based on offsets.
 
-    Note that end time per word consider only the first instance of the last character in the word - This might result in slightly earlier end timings when the model predicts repetitions.
+    Note that end time per word consider only the first instance of the last character in the word - This might result
+    in slightly earlier end timings when the model predicts repetitions.
     Args:
         predictions (list(str)): The list of characters predicted.
         offsets (list(int)): the list of offsets for each character.
-        ratio (float, optional): The ratio between output sequence length and input seconds. Can be computed as (sample rate) * (window stride).
+        ratio (float, optional): The ratio between output sequence length and input seconds. Can be computed as \
+            (sample rate) * (window stride).
     """
     word_times = []
     assert len(predictions) == len(offsets)
     current_word = ''
     start_time = -1
     end_time = -1
-    for letter,offset in zip(predictions,offsets):
+    for letter, offset in zip(predictions, offsets):
         if letter == ' ' and current_word:
-            word_times.append((current_word,start_time,end_time))
+            word_times.append((current_word, start_time, end_time))
             current_word = ''
             start_time = -1
             end_time = -1
         if letter == ' ' and not current_word:
-            continue # Nothing to do
+            continue  # Nothing to do
         if current_word:
             end_time = offset * ratio
             current_word += letter
@@ -298,14 +308,15 @@ def get_time_per_word(predictions, offsets, ratio=1.0):
             end_time = offset * ratio
             current_word = letter
     if current_word:
-        word_times.append((current_word,start_time,end_time))
+        word_times.append((current_word, start_time, end_time))
     return word_times
 
 
 if __name__ == '__main__':
-    my_decoder = GreedyDecoder(['_','a','b',' '])
-    a = my_decoder.decode( torch.Tensor([[[0.4,0.6,0,0]]]))
-    space = my_decoder.decode( torch.Tensor([[[0.4,0.1,0,0.5]]]))
-    aba_and_space = my_decoder.decode(torch.Tensor([[[0.0,0.6,0.3,0.1],[0.0,0.6,0.3,0.1],[0.0,0.3,0.6,0.1],[0.0,0.6,0.3,0.1]],
-                                          [[0.4,0.1,0,0.5],[0.4,0.1,0,0.5],[0.4,0.1,0,0.5],[0.4,0.1,0,0.5]]]),
-                            sizes=[4,1])
+    my_decoder = GreedyDecoder(['_', 'a', 'b', ' '])
+    a = my_decoder.decode(torch.Tensor([[[0.4, 0.6, 0, 0]]]))
+    space = my_decoder.decode(torch.Tensor([[[0.4, 0.1, 0, 0.5]]]))
+    aba_and_space = my_decoder.decode(
+        torch.Tensor([[[0.0, 0.6, 0.3, 0.1], [0.0, 0.6, 0.3, 0.1], [0.0, 0.3, 0.6, 0.1], [0.0, 0.6, 0.3, 0.1]],
+                      [[0.4, 0.1, 0, 0.5], [0.4, 0.1, 0, 0.5], [0.4, 0.1, 0, 0.5], [0.4, 0.1, 0, 0.5]]]),
+        sizes=[4, 1])

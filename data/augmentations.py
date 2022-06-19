@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
-Based on nvidia nemo implementation for ASR 
-'''
+"""
+Based on nvidia nemo implementation for ASR
+"""
 import random
 
 import torch
@@ -10,7 +10,7 @@ import torch.nn as nn
 
 class SpecAugment(nn.Module):
     """
-    Zeroes out(cuts) random continuous horisontal or
+    Zeroes out(cuts) random continuous horizontal or
     vertical segments of the spectrogram as described in
     SpecAugment (https://arxiv.org/abs/1904.08779).
     params:
@@ -21,7 +21,7 @@ class SpecAugment(nn.Module):
     """
 
     def __init__(
-        self, freq_masks=1, time_masks=1, freq_width=15, time_width=50, rng=None,
+            self, freq_masks=1, time_masks=1, freq_width=15, time_width=50, rng=None,
     ):
         super(SpecAugment, self).__init__()
 
@@ -45,14 +45,14 @@ class SpecAugment(nn.Module):
 
                 w = int(self._rng.uniform(0, self.freq_width))
 
-                mask[idx, x_left : x_left + w, :] = 1
+                mask[idx, x_left: x_left + w, :] = 1
 
             for i in range(self.time_masks):
                 y_left = int(self._rng.uniform(0, sh[2] - self.time_width))
 
                 w = int(self._rng.uniform(0, self.time_width))
 
-                mask[idx, :, y_left : y_left + w] = 1
+                mask[idx, :, y_left: y_left + w] = 1
 
         x = x.masked_fill(mask.type(torch.bool).to(device=x.device), 0)
 
@@ -92,16 +92,18 @@ class SpecCutout(nn.Module):
                 w_x = int(self._rng.uniform(0, self.rect_time))
                 w_y = int(self._rng.uniform(0, self.rect_freq))
 
-                mask[idx, rect_x : rect_x + w_x, rect_y : rect_y + w_y] = 1
+                mask[idx, rect_x: rect_x + w_x, rect_y: rect_y + w_y] = 1
 
         x = x.masked_fill(mask.type(torch.bool).to(device=x.device), 0)
 
         return x
-    
+
+
 class Identity(nn.Module):
     """
     Placeholder module.
     """
+
     @torch.no_grad()
     def forward(self, x):
         return x

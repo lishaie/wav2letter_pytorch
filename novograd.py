@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Copied from https://github.com/NVIDIA/DeepLearningExamples. Specifically,
 https://github.com/NVIDIA/DeepLearningExamples/blob/master/PyTorch/SpeechRecognition/Jasper/optimizers.py
 
 Not original code!
-'''
+"""
 
 import torch
 from torch.optim import Optimizer
-import math
+# import math
+
+
 class Novograd(Optimizer):
     """
     Implements Novograd algorithm.
@@ -38,9 +40,9 @@ class Novograd(Optimizer):
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         defaults = dict(lr=lr, betas=betas, eps=eps,
-                      weight_decay=weight_decay,
-                      grad_averaging=grad_averaging,
-                      amsgrad=amsgrad)
+                        weight_decay=weight_decay,
+                        grad_averaging=grad_averaging,
+                        amsgrad=amsgrad)
 
         super(Novograd, self).__init__(params, defaults)
 
