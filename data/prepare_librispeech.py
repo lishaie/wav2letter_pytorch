@@ -45,15 +45,17 @@ def read_transcriptions(subset_name, extracted_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Librispeech data preparation.')
     parser.add_argument('--subset', type=str, default='dev-clean', help='Subset of Librispeech to download.')
-    parser.add_argument('--download_dir', type=str, default='.',
+    parser.add_argument('--download_dir', type=str, default='./datasets/',
                         help='Directory to download Librispeech to. Will be created if not exists.')
-    parser.add_argument('--extracted_dir', type=str, default='./extracted',
+    parser.add_argument('--extracted_dir', type=str, default='./datasets/extracted',
                         help='Directory to extract Librispeech to. Will be created if not exists.')
-    parser.add_argument('--manifest_path', type=str, default='df.csv',
+    parser.add_argument('--manifest_path', type=str, default=None,
                         help='Filename of the manifest to create. This is the path required by the "train.py" script')
     parser.add_argument('--use_relative_path', default=True, action='store_false',
                         help='Use relative paths in resulting manifest.')
     args = parser.parse_args()
+    if args.manifest_path is None:
+        args.manifest_path = os.path.join(args.download_dir, args.subset + '.csv')
 
     def progress_function(gen):
         return gen

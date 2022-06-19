@@ -2,23 +2,25 @@ defaults:
     - audio: standard_16k
     - optimizer: exp_lr_optimizer
     - model: wav2letter
+    - _self_
 data:
-    train_manifest: ???
-    val_manifest: ???
+    train_manifest: datasets/dev-clean.csv
+    val_manifest: datasets/test-clean.csv
     batch_size: 4
     mel_spec: ${model.input_size}
     audio_conf: ${model.audio_conf}
 model:
     input_size: 64
-    labels: english_lowercase
+    labels: english
     decoder:
         _target_: decoder.GreedyDecoder
         labels: ${model.labels}
+    mid_layers: 6
 trainer:
     default_root_dir: .
-    max_epochs: 5
-    max_steps: null
-    gpus: 0
+    max_epochs: 60
+    max_steps: -1
+    gpus: 1
     
 hydra:
     run:

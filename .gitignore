@@ -140,3 +140,8 @@ models/
 
 # PyCharm
 .idea
+
+# dataset dirs (csvs, flacs, wavs, etc.)
+datasets/*.csv
+datasets/*.tar.gz
+datasets/extracted
