@@ -73,7 +73,7 @@ class SpectrogramExtractor(torch.nn.Module):
         dithering = 1e-5
         preemph = 0.97
         x = torch.Tensor(audio) + torch.randn(audio.shape) * dithering  # dithering
-        x = torch.cat((x[0].unsqueeze(0), x[1:] - preemph * x[:-1]), dim=0)  # preemphasi
+        # x = torch.cat((x[0].unsqueeze(0), x[1:] - preemph * x[:-1]), dim=0)  # preemphasi
         x = self.stft(x.to(device=self.fb.device))
         x = torch.sqrt(x.pow(2).sum(-1))  # get magnitudes
         x = x.pow(2)  # power magnitude
