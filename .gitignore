@@ -143,6 +143,8 @@ models/
 
 # dataset dirs (csvs, flacs, wavs, etc.)
 datasets/*.csv
+datasets/*.csv.orig
+datasets/*.csv.backup.*
 datasets/*.tar.gz
 datasets/extracted
 
