@@ -111,8 +111,9 @@ class SpectrogramExtractor(torch.nn.Module):
         # x = audio + torch.randn(audio.shape, device=audio.device) * dithering  # dithering FIXME UNCOMMENT
         # x = torch.cat((x[0].unsqueeze(0), x[1:] - preemph * x[:-1]), dim=0)  # preemphasi
         x = self.stft(x)
-        x = torch.sqrt(x.pow(2).sum(-1))  # get magnitudes
-        x = x.pow(2)  # power magnitude
+        # x = torch.sqrt(x.pow(2).sum(-1))  # get magnitudes
+        # x = x.pow(2)  # power magnitude
+        x = x.pow(2).sum(-1)
         x = torch.matmul(self.fb.to(x.dtype), x)  # apply filterbanks
         return x
 
