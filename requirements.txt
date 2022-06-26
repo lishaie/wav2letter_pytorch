@@ -3,6 +3,7 @@ pandas
 librosa
 tqdm
 torch
+torchaudio
 six
 scipy
 glob2

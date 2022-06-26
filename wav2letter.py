@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
-# import librosa
-from math import ceil, log2
-from typing import Optional
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor, IntTensor
-from torchaudio.transforms import MelSpectrogram
-# import pytorch_lightning as ptl
 import numpy as np
 
 from base_asr_models import ConvCTCASR
-# from data.data_loader import SpectrogramExtractor
 from data import wav_data_loader
 
 

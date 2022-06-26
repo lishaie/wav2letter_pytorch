@@ -34,7 +34,7 @@ class RndDataset(Dataset):
         self.wavs = torch.rand(self.bs, self.max_len)
         self.targets = torch.ones(bs, 78)
         self.target_lens = torch.ones(bs, dtype=torch.int32) * 67
-        self.file_pathes = bs * ['none']
+        self.file_paths = bs * ['none']
         self.transcripts = bs * ['foo']
 
     def __getitem__(self, item):
@@ -44,7 +44,7 @@ class RndDataset(Dataset):
         # wavs = self.wavs[:, :n]
         wav_lens = torch.randint(n//2, n, [self.bs])
 
-        return wavs, wav_lens, self.targets, self.target_lens, self.file_pathes, self.transcripts
+        return wavs, wav_lens, self.targets, self.target_lens, self.file_paths, self.transcripts
 
     def __len__(self):
         return math.ceil(2703 / self.bs)
