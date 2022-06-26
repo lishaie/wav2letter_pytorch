@@ -94,7 +94,8 @@ class SpectrogramExtractor(torch.nn.Module):
         window_fn = torch_windows.get(audio_conf.window, None)
         window_tensor = window_fn(window_size_samples, periodic=False) if window_fn else None
         self.register_buffer("window", window_tensor)
-        self.get_spect = torchaudio.transforms.Spectrogram(
+        self.get_spect = torchaudio.transforms.MelSpectrogram(
+            # spect params
             n_fft=self.n_fft,
             hop_length=window_stride_samples,
             win_length=window_size_samples,
@@ -102,6 +103,9 @@ class SpectrogramExtractor(torch.nn.Module):
             # window=self.window.to(dtype=torch.float),
             window_fn=window_fn,
             power=2.0,
+            # Mel params
+            sample_rate=audio_conf.sample_rate,
+            n_mels=mel_spec, f_max=audio_conf.sample_rate / 2,
         )
 
     def _get_spect(self, audio: Tensor) -> Tensor:
@@ -111,7 +115,7 @@ class SpectrogramExtractor(torch.nn.Module):
         # x = audio + torch.randn(audio.shape, device=audio.device) * dithering  # dithering FIXME UNCOMMENT
         # x = torch.cat((x[0].unsqueeze(0), x[1:] - preemph * x[:-1]), dim=0)  # preemphasi
         x = self.get_spect(x)
-        x = torch.matmul(self.fb.to(x.dtype), x)  # apply filterbanks
+        # x = torch.matmul(self.fb.to(x.dtype), x)  # apply filterbanks
         return x
 
     def forward(self, signal):
