@@ -2,14 +2,9 @@
 import math
 from typing import Tuple, List
 
-import librosa
-import numpy as np
-# import scipy.signal
-# from scipy.io import wavfile
-# import soundfile as sf
 import torch
 import torch.nn
-from torch import Tensor
+from torch import Tensor, IntTensor, nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
 import torchaudio
@@ -54,15 +49,15 @@ class WavDataset(Dataset):
         return self.size
 
 
-def _collate_fn(batch: List[Tuple[torch.Tensor, torch.IntTensor, str, str]]):
-    wav_tensors, targets, file_pathes, transcripts = zip(*batch)
+def _collate_fn(batch: List[Tuple[Tensor, IntTensor, str, str]]):
+    wav_tensors, targets, file_paths, transcripts = zip(*batch)
 
-    wav_lens = torch.IntTensor([len(x) for x in wav_tensors])
-    target_lens = torch.IntTensor([len(x) for x in targets])
+    wav_lens = IntTensor([len(x) for x in wav_tensors])
+    target_lens = IntTensor([len(x) for x in targets])
     wav_batch = pad_sequence(wav_tensors, batch_first=True)
     target_batch = pad_sequence(targets, batch_first=True)
 
-    return wav_batch, wav_lens, target_batch, target_lens, file_pathes, transcripts
+    return wav_batch, wav_lens, target_batch, target_lens, file_paths, transcripts
 
 
 class WavDataLoader(DataLoader):
@@ -71,7 +66,7 @@ class WavDataLoader(DataLoader):
         self.collate_fn = _collate_fn
 
 
-class SpectrogramExtractor(torch.nn.Module):
+class SpectrogramExtractor(nn.Module):
     def __init__(self, audio_conf, mel_spec=64):
         super().__init__()
         window_size_samples = int(audio_conf.sample_rate * audio_conf.window_size)
