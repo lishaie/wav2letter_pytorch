@@ -77,13 +77,7 @@ class SpectrogramExtractor(torch.nn.Module):
         window_size_samples = int(audio_conf.sample_rate * audio_conf.window_size)
         window_stride_samples = int(audio_conf.sample_rate * audio_conf.window_stride)
         self.n_fft = 2 ** math.ceil(math.log2(window_size_samples))
-        filterbanks = torch.tensor(
-            librosa.filters.mel(sr=audio_conf.sample_rate,
-                                n_fft=self.n_fft,
-                                n_mels=mel_spec, fmin=0, fmax=audio_conf.sample_rate / 2),
-            dtype=torch.float
-        ).unsqueeze(0)
-        self.register_buffer("fb", filterbanks)
+
         torch_windows = {
             'hann': torch.hann_window,
             'hamming': torch.hamming_window,
@@ -92,15 +86,12 @@ class SpectrogramExtractor(torch.nn.Module):
             'none': None,
         }
         window_fn = torch_windows.get(audio_conf.window, None)
-        window_tensor = window_fn(window_size_samples, periodic=False) if window_fn else None
-        self.register_buffer("window", window_tensor)
         self.get_spect = torchaudio.transforms.MelSpectrogram(
             # spect params
             n_fft=self.n_fft,
             hop_length=window_stride_samples,
             win_length=window_size_samples,
             center=True,
-            # window=self.window.to(dtype=torch.float),
             window_fn=window_fn,
             power=2.0,
             # Mel params
@@ -108,20 +99,10 @@ class SpectrogramExtractor(torch.nn.Module):
             n_mels=mel_spec, f_max=audio_conf.sample_rate / 2,
         )
 
-    def _get_spect(self, audio: Tensor) -> Tensor:
-        dithering = 1e-5
-        preemph = 0.97
-        x = audio  # FIXME REMOVE
-        # x = audio + torch.randn(audio.shape, device=audio.device) * dithering  # dithering FIXME UNCOMMENT
-        # x = torch.cat((x[0].unsqueeze(0), x[1:] - preemph * x[:-1]), dim=0)  # preemphasi
-        x = self.get_spect(x)
-        # x = torch.matmul(self.fb.to(x.dtype), x)  # apply filterbanks
-        return x
-
     def forward(self, signal):
         epsilon = 1e-5
         log_zero_guard_value = 2 ** -24
-        spect = self._get_spect(signal)
+        spect = self.get_spect(signal)
         spect = torch.log1p(spect + log_zero_guard_value)
         # normalize across time, per feature
         mean = spect.mean(axis=-1, keepdims=True)
