@@ -9,6 +9,8 @@ import shutil
 import glob
 import wget
 
+# TODO extract flac to wavs
+
 
 def download_librispeech_subset(subset_name, download_dir):
     if os.path.exists(f'{download_dir}/{subset_name}.tar.gz'):

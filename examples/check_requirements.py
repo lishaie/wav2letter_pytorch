@@ -7,6 +7,7 @@ Created on Wed Feb 24 10:56:07 2021
 
 import numpy
 import torch
+import torchaudio
 import pytorch_lightning
 import hydra
 import soundfile
