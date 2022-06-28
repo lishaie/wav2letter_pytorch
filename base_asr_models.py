@@ -135,6 +135,7 @@ class ConvCTCASR(ptl.LightningModule):
 
         out, output_lengths = self.forward(inputs, input_lengths)
         loss = self.criterion(out.transpose(0, 1), targets, output_lengths, target_lengths)
+        # noinspection PyUnresolvedReferences
         logs = {'train_loss': loss, 'learning_rate': self.optimizers().param_groups[0]['lr']}
         # logs.update(self.add_string_metrics(out, output_lengths, texts, 'train'))
         self.log_dict(logs)

@@ -40,6 +40,7 @@ class WavDataset(Dataset):
         target = list(filter(None, (self.labels_map.get(x) for x in transcript)))
         target = torch.IntTensor(target)
 
+        # noinspection PyUnresolvedReferences
         wav, sample_rate = torchaudio.load(audio_path, channels_first=True)
         assert sample_rate == self.sample_rate, \
             f'expected sample_rate {self.sample_rate} but found {sample_rate} ({audio_path})'

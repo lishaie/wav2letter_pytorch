@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -72,14 +73,10 @@ class Wav2Letter(ConvCTCASR):
                                  stride=1, bn=False, activation_use=False)
         conv_blocks.append(('conv1d_{}'.format(len(layers)), last_layer))
         self.conv1ds = nn.Sequential(OrderedDict(conv_blocks))
+        self._scaling_factor = np.prod([m.conv1.stride[0] for m in self.conv1ds.children()])
 
     @property
     def scaling_factor(self):
-        if not hasattr(self, '_scaling_factor'):
-            strides = []
-            for module in self.conv1ds.children():
-                strides.append(module.conv1.stride[0])
-            self._scaling_factor = int(np.prod(strides))
         return self._scaling_factor
 
     def forward(self, x: Tensor, input_lengths: IntTensor = None):
