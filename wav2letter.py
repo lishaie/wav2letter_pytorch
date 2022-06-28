@@ -7,7 +7,6 @@ from torch import Tensor, IntTensor
 import numpy as np
 
 from base_asr_models import ConvCTCASR
-from data import wav_data_loader
 
 
 class Conv1dBlock(nn.Module):
@@ -83,7 +82,7 @@ class Wav2Letter(ConvCTCASR):
             self._scaling_factor = int(np.prod(strides))
         return self._scaling_factor
 
-    def forward(self, x, input_lengths=None):
+    def forward(self, x: Tensor, input_lengths: IntTensor = None):
         x = self.conv1ds(x)
         x = x.transpose(1, 2)
         x = F.log_softmax(x, dim=-1)
@@ -92,41 +91,3 @@ class Wav2Letter(ConvCTCASR):
         else:
             output_lengths = None
         return x, output_lengths
-
-
-class RawWav2Letter(Wav2Letter):
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        self.example_input_array = (torch.rand(4, 48000), torch.randint(16000, 48000, [4]))
-
-        sample_rate, window_stride, window_size, window, n_mels = \
-            cfg.audio_conf['sample_rate'], cfg.audio_conf['window_stride'], cfg.audio_conf['window_size'], \
-            cfg.audio_conf['window'], cfg['input_size']
-
-        self.window_size_samples = int(sample_rate * window_size)
-        self.window_stride_samples = int(sample_rate * window_stride)
-        # n_fft = 2 ** ceil(log2(self.window_size_samples))
-        #
-        # window_fn = {
-        #     'hann': torch.hann_window,
-        #     'hamming': torch.hamming_window,
-        #     'blackman': torch.blackman_window,
-        #     'bartlett': torch.bartlett_window,
-        #     'none': None,
-        # }.get(window)
-        #
-        # self.mel_spect = MelSpectrogram(
-        #     n_mels=n_mels, sample_rate=sample_rate, n_fft=n_fft, win_length=self.window_size_samples,
-        #     hop_length=self.window_stride_samples, window_fn=window_fn, f_max=sample_rate / 2)
-        self.mel_spect = wav_data_loader.SpectrogramExtractor(cfg.audio_conf, mel_spec=n_mels)
-
-    def forward(self, x: Tensor, input_lengths: IntTensor = None):
-        window_size, window_stride = self.window_size_samples, self.window_stride_samples
-        # print('RawWav2Letter: forward: x.shape:', x.shape)
-        x = self.mel_spect(x)
-
-        if input_lengths is not None:
-            input_lengths = torch.ceil((input_lengths - window_size + window_stride) / window_stride)
-            input_lengths = input_lengths.to(dtype=torch.int32)
-
-        return super().forward(x, input_lengths)
