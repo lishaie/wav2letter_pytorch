@@ -1,6 +1,5 @@
 numpy
 pandas
-librosa
 tqdm
 torch
 torchaudio
