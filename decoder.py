@@ -106,7 +106,7 @@ class GreedyDecoder(Decoder):
             return strings
 
     def process_string(self, sequence: List[int], size: int, remove_repetitions: bool = False):
-        string = ''
+        char_list = []
         offsets = []
         for i in range(size):
             char = self.int_to_char[sequence[i]]
@@ -115,12 +115,12 @@ class GreedyDecoder(Decoder):
                 if remove_repetitions and i != 0 and char == self.int_to_char[sequence[i - 1]]:
                     pass
                 elif char == self.labels[self.space_index]:
-                    string += ' '
+                    char_list.append(' ')
                     offsets.append(i)
                 else:
-                    string = string + char
+                    char_list.append(char)
                     offsets.append(i)
-        return string, torch.IntTensor(offsets)
+        return ''.join(char_list), torch.IntTensor(offsets)
 
     def decode(self, probs, sizes=None, return_offsets=False):
         """
