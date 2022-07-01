@@ -5,6 +5,7 @@ import Levenshtein as Lev
 import re
 from collections import defaultdict, Counter
 import numpy as np
+from torch import IntTensor
 
 import data.label_sets
 
@@ -85,8 +86,10 @@ class GreedyDecoder(Decoder):
     def __init__(self, labels, blank_index=0):
         super(GreedyDecoder, self).__init__(labels, blank_index)
 
-    def convert_to_strings(self, sequences, sizes=None, remove_repetitions=False, return_offsets=False):
+    def convert_to_strings(self, sequences: IntTensor, sizes: IntTensor = None, remove_repetitions: bool = False,
+                           return_offsets: bool = False):
         """Given a list of numeric sequences, returns the corresponding strings"""
+        sequences, sizes = sequences.cpu(), sizes.cpu()
         strings = []
         offsets = [] if return_offsets else None
         for x in xrange(len(sequences)):
