@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-import torch
+from typing import List
+
 import torch
 from six.moves import xrange
 import Levenshtein as Lev
@@ -89,7 +91,7 @@ class GreedyDecoder(Decoder):
     def convert_to_strings(self, sequences: IntTensor, sizes: IntTensor = None, remove_repetitions: bool = False,
                            return_offsets: bool = False):
         """Given a list of numeric sequences, returns the corresponding strings"""
-        sequences, sizes = sequences.cpu(), sizes.cpu()
+        sequences, sizes = sequences.tolist(), sizes.tolist()
         strings = []
         offsets = [] if return_offsets else None
         for x in xrange(len(sequences)):
@@ -103,14 +105,14 @@ class GreedyDecoder(Decoder):
         else:
             return strings
 
-    def process_string(self, sequence, size, remove_repetitions=False):
+    def process_string(self, sequence: List[int], size: int, remove_repetitions: bool = False):
         string = ''
         offsets = []
         for i in range(size):
-            char = self.int_to_char[sequence[i].item()]
+            char = self.int_to_char[sequence[i]]
             if char != self.int_to_char[self.blank_index]:
                 # if this char is a repetition and remove_repetitions=true, then skip
-                if remove_repetitions and i != 0 and char == self.int_to_char[sequence[i - 1].item()]:
+                if remove_repetitions and i != 0 and char == self.int_to_char[sequence[i - 1]]:
                     pass
                 elif char == self.labels[self.space_index]:
                     string += ' '
