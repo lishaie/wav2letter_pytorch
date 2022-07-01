@@ -23,7 +23,7 @@ class Decoder(object):
 
     def __init__(self, labels, blank_index=0):
         self.labels = data.label_sets.labels_map[labels] if type(labels) is str else labels
-        self.int_to_char = dict([(i, c) for (i, c) in enumerate(labels)])
+        self.int_to_char = list(labels)
         self.blank_index = blank_index
         space_index = len(labels)  # To prevent errors in decode, we add an out of bounds index for the space
         if ' ' in labels:
