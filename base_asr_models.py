@@ -104,7 +104,7 @@ class ConvCTCASR(ptl.LightningModule):
         raise NotImplementedError()
         # returns output, output_lengths
         
-    def add_string_metrics(self, out, output_lengths, texts, prefix):
+    def add_string_metrics(self, out, output_lengths, texts, stage):
         decoded_texts = self.ctc_decoder.decode(out, output_lengths)
         if random.random() < self.print_decoded_prob:
             print(f'reference: {texts[0]}')
@@ -120,7 +120,7 @@ class ConvCTCASR(ptl.LightningModule):
         cer = cer_sum / cer_denom_sum
         wer = wer_sum / wer_denom_sum
         lengths_ratio = sum(map(len, decoded_texts)) / sum(map(len, texts))
-        return {prefix+'_cer': cer, prefix+'_wer': wer, prefix+'_len_ratio': lengths_ratio}
+        return {f's_cer/{stage}': cer, f's_wer/{stage}': wer, f's_len_ratio/{stage}': lengths_ratio}
 
     # PyTorch Lightning methods
     def configure_optimizers(self):
@@ -136,7 +136,7 @@ class ConvCTCASR(ptl.LightningModule):
         out, output_lengths = self.forward(inputs, input_lengths)
         loss = self.criterion(out.transpose(0, 1), targets, output_lengths, target_lengths)
         # noinspection PyUnresolvedReferences
-        logs = {'train_loss': loss, 'learning_rate': self.optimizers().param_groups[0]['lr']}
+        logs = {'loss/train_loss': loss, 'learning_rate': self.optimizers().param_groups[0]['lr']}
         # logs.update(self.add_string_metrics(out, output_lengths, texts, 'train'))
         self.log_dict(logs)
         return loss
@@ -148,7 +148,7 @@ class ConvCTCASR(ptl.LightningModule):
 
         out, output_lengths = self.forward(inputs, input_lengths)
         loss = self.criterion(out.transpose(0, 1), targets, output_lengths, target_lengths)
-        logs = {'val_loss': loss}
+        logs = {'loss/val_loss': loss}
         logs.update(self.add_string_metrics(out, output_lengths, texts, 'val'))
         self.log_dict(logs)
         return loss
