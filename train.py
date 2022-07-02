@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict, Union
 
+import pandas as pd
 import pytorch_lightning
+from pytorch_lightning import loggers as pl_loggers
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 from torch import nn
 from torch.utils.data import DataLoader
@@ -34,15 +36,32 @@ _rval: Optional[Tuple[pytorch_lightning.Trainer, nn.Module, DataLoader, DataLoad
 _cfg = None
 
 
+def get_hparams(cfg: DictConfig) -> Dict[str, Union[str, int, float]]:
+    cfg = OmegaConf.to_object(cfg.copy())
+    cfg['model'].pop('layers')
+    cfg['model'].pop('labels')
+    cfg['model']['decoder'].pop('labels')
+    cfg = pd.json_normalize(cfg, sep='.').to_dict()
+    return cfg
+
+
 @hydra.main(config_path='configuration', config_name='config', version_base='1.1')
 def main(cfg: DictConfig):
     if type(cfg.model.labels) is str:
         cfg.model.labels = label_sets.labels_map[cfg.model.labels]
     global _cfg, _rval
     _cfg = cfg
+
+    log_dir = f'lightning_logs'
+    opt_name = cfg.model.optimizer._target_.split(".")[-1]
+    exp_name = f'bs{cfg.data.batch_size:03d}_{opt_name}{cfg.model.optimizer.lr:1.3f}'
+    tb_logger = pl_loggers.TensorBoardLogger(save_dir=log_dir, name=exp_name, version=None, default_hp_metric=True)
+    hparams = get_hparams(cfg)
+    tb_logger.log_hyperparams(params=hparams)
+
     train_loader, val_loader = get_data_loaders(cfg.model.labels, cfg.data)
     model = name_to_model[cfg.model.name](cfg.model)
-    trainer = pytorch_lightning.Trainer(**cfg.trainer)
+    trainer = pytorch_lightning.Trainer(**cfg.trainer, logger=tb_logger)
     _rval = (trainer, model, train_loader, val_loader)
     trainer.fit(model, train_loader, val_loader)
 
