@@ -7,6 +7,7 @@ data:
     train_manifest: datasets/dev-clean.csv
     val_manifest: datasets/test-clean.csv
     batch_size: 4
+    shuffle: true
     num_workers: 0
     mel_spec: ${model.input_size}
     audio_conf: ${model.audio_conf}

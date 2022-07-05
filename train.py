@@ -26,7 +26,8 @@ name_to_model = {
 def get_data_loaders(labels, cfg):
     sample_rate = cfg.audio_conf.sample_rate
     train_dataset = WavDataset(cfg.train_manifest, sample_rate, labels)
-    train_batch_loader = BatchWavDataLoader(train_dataset, batch_size=cfg.batch_size, num_workers=cfg.num_workers)
+    train_batch_loader = BatchWavDataLoader(train_dataset, batch_size=cfg.batch_size, num_workers=cfg.num_workers,
+                                            shuffle=cfg.shuffle)
     eval_dataset = WavDataset(cfg.val_manifest, sample_rate, labels)
     val_batch_loader = BatchWavDataLoader(eval_dataset, batch_size=cfg.batch_size, num_workers=cfg.num_workers)
     return train_batch_loader, val_batch_loader
