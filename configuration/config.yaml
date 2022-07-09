@@ -4,7 +4,7 @@ defaults:
     - model: wav2letter
     - _self_
 data:
-    train_manifest: datasets/train-10k.csv
+    train_manifest: datasets/train-clean-100.csv
     val_manifest: datasets/dev-clean.csv
     batch_size: 4
     shuffle: true
